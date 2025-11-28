@@ -2,80 +2,167 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CRITICAL: Ensure correct scaling on old devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>iOS 7 Weather Clone</title>
-    <!-- Load Tailwind CSS (assumed supported) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Removed Tailwind CDN for maximum compatibility -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
-        /* Custom CSS for the iOS 7 'Vibrancy' effect */
+        /* BASE STYLES & FONT */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            color: white; 
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
+            transition: background 1s ease-in-out;
+            background: linear-gradient(180deg, #2a2a72 0%, #009ffd 100%); /* Default SF gradient */
+        }
+        
+        /* iOS 7 VIBRANCY (Glass-Blur) EFFECT */
         .glass-blur {
             background-color: rgba(255, 255, 255, 0.1);
             /* CRITICAL: Ensure older WebKit supports the blur effect */
-            backdrop-filter: blur(10px) saturate(180%);
             -webkit-backdrop-filter: blur(10px) saturate(180%);
+            backdrop-filter: blur(10px) saturate(180%);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.15); 
         }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Default background gradient (San Francisco - Night) */
-            background: linear-gradient(180deg, #2a2a72 0%, #009ffd 100%);
-            transition: background 1s ease-in-out;
-        }
 
-        /* The main temperature must be extremely thin and large */
-        .temp-main {
-            font-weight: 100; 
-            font-size: 8rem; 
-            line-height: 0.9;
-        }
-
-        /* Container for the swipeable pages - using WebKit prefixes for compatibility */
+        /* MAIN SCROLL CONTAINER (Using Old WebKit Box Model) */
         #weather-scroll-container {
             height: 100%;
             overflow-x: scroll;
-            /* Older WebKit required display: -webkit-box; but flex is safer */
+            /* Box Model Setup */
+            display: -webkit-box; 
             display: flex;
+            -webkit-box-orient: horizontal;
             
-            /* CRITICAL: Mandatory scroll snapping for native-like page behavior */
+            /* Keeping the CSS snapping properties for compatibility, but relying on JS now */
             -webkit-scroll-snap-type: x mandatory;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
         }
 
-        /* Each city page takes up the full viewport width and aligns to the start */
+        /* CITY PAGE (Using Old WebKit Box Model for Layout) */
         .city-page {
-            /* Prefixing flex properties for old Safari */
-            -webkit-flex: 0 0 100vw; 
-            flex: 0 0 100vw; 
+            /* flex: 0 0 100vw; equivalent */
+            -webkit-box-flex: 0; 
+            width: 100vw;
+            box-sizing: border-box; /* Necessary for padding */
+            padding: 16px; /* 1rem */
             
             -webkit-scroll-snap-align: start;
             scroll-snap-align: start;
-            padding: 1rem;
             
-            /* Ensuring flex layout is supported */
+            /* Internal vertical layout: display: flex; flex-direction: column; justify-content: space-between; */
             display: -webkit-box;
-            display: flex;
             -webkit-box-orient: vertical;
-            -webkit-flex-direction: column;
-            flex-direction: column;
-            -webkit-box-pack: justify;
-            -webkit-justify-content: space-between;
-            justify-content: space-between;
+            -webkit-box-pack: justify; 
+            
+            min-height: 100%; /* Ensure it fills the scroll container height */
         }
+        
+        /* UTILITY CLASSES (Mimicking essential styles) */
+        .flex-col-center {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-box-align: center; /* items-center */
+            padding-top: 32px; /* pt-8 */
+            margin-bottom: 8px; /* space-y-2 */
+        }
+
+        .text-3xl { font-size: 30px; line-height: 1.2; }
+        .text-xl { font-size: 20px; line-height: 1.2; }
+        .text-lg { font-size: 18px; line-height: 1.2; }
+        .text-sm { font-size: 14px; line-height: 1.2; }
+        .font-light { font-weight: 300; }
+        .font-medium { font-weight: 500; }
+        .font-extralight { font-weight: 200; }
+        .tracking-wide { letter-spacing: 0.025em; }
+
+        /* MAIN TEMPERATURE STYLING */
+        .temp-main {
+            font-weight: 100; /* Extra thin look */
+            font-size: 130px; 
+            line-height: 110px; /* Reduced line-height to keep it tight */
+        }
+        
+        /* HOURLY & DAILY FORECAST LAYOUTS */
+        .hourly-scroll {
+            display: -webkit-box;
+            overflow-x: scroll;
+            padding: 8px 0; /* py-2 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 12px; /* mb-3 */
+            text-align: center;
+        }
+
+        .hourly-item {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-box-align: center;
+            width: 60px; /* fixed width */
+            margin-right: 24px; /* space-x-6 */
+            -webkit-box-flex: 0; /* flex-shrink-0 */
+        }
+        
+        .daily-item {
+            display: -webkit-box;
+            -webkit-box-pack: justify; /* justify-between */
+            -webkit-box-align: center; /* items-center */
+            padding: 8px 0;
+        }
+        
+        /* Bottom Nav Bar */
+        .bottom-nav-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px; /* h-16 */
+            padding: 0 16px; /* px-4 */
+            
+            /* Layout */
+            display: -webkit-box;
+            -webkit-box-pack: justify; 
+            -webkit-box-align: center; 
+            
+            /* Glass-blur style override */
+            background-color: rgba(255, 255, 255, 0.05); 
+            border: none; 
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0;
+        }
+
+        .dot-indicator-container {
+             display: -webkit-box;
+             margin-left: 8px; /* space-x-2 */
+        }
+
+        .dot {
+             width: 8px; height: 8px;
+             border-radius: 50%;
+             background-color: rgba(255, 255, 255, 0.4);
+             margin: 0 4px; /* Space between dots */
+             -webkit-transition: all 0.3s ease-in-out;
+             transition: all 0.3s ease-in-out;
+        }
+
+        .dot.active {
+            background-color: white;
+        }
+
     </style>
 </head>
-<body class="h-screen w-screen text-white overflow-hidden">
+<body>
 
     <!-- Global Wrapper for Scroll Snap -->
     <div id="weather-scroll-container">
-        <!-- Placeholder content is okay, but will be overwritten by JS on load -->
-        <div id="city-0" class="city-page"></div>
-        <div id="city-1" class="city-page"></div>
-        <div id="city-2" class="city-page"></div>
-        <div id="city-3" class="city-page"></div>
+        <!-- City pages will be generated and content inserted here -->
     </div>
 
     <script>
@@ -179,61 +266,62 @@
         var body = document.body;
         var pageIndicator; 
         var numCities = weatherData.length;
+        var bottomNavHtml;
+
 
         // --- Helper Functions ---
 
         /**
          * Generates the HTML content for a single city's weather view.
-         * Note: Arrow functions and template literals are replaced with ES5 syntax.
          */
         function generateCityContent(data) {
             // Using .map() and standard function, then joining via string concatenation
             var hourlyHtml = data.hourly.map(function(item) {
-                return '<div class="flex flex-col items-center flex-shrink-0 w-12">' +
+                return '<div class="hourly-item">' +
                        '<span class="font-light text-sm">' + item.time + '</span>' +
-                       '<span class="text-2xl pt-1">' + item.icon + '</span>' +
-                       '<span class="font-light text-xl pt-1">' + item.temp + '</span>' +
+                       '<span class="text-2xl" style="padding-top: 4px;">' + item.icon + '</span>' +
+                       '<span class="font-light text-xl" style="padding-top: 4px;">' + item.temp + '</span>' +
                        '</div>';
             }).join('');
 
             var dailyHtml = data.daily.map(function(item) {
-                return '<div class="flex justify-between items-center text-lg">' +
-                       '<span class="font-light w-1/4">' + item.day + '</span>' +
-                       '<span class="text-2xl w-1/4 text-center">' + item.icon + '</span>' +
-                       '<span class="font-light w-1/4 text-left">' + item.low + '</span>' +
-                       '<span class="font-medium w-1/4 text-right">' + item.high + '</span>' +
+                return '<div class="daily-item text-lg">' +
+                       '<span class="font-light" style="width: 25%;">' + item.day + '</span>' +
+                       '<span class="text-2xl" style="width: 25%; text-align: center;">' + item.icon + '</span>' +
+                       '<span class="font-light" style="width: 25%; text-align: left;">' + item.low + '</span>' +
+                       '<span class="font-medium" style="width: 25%; text-align: right;">' + item.high + '</span>' +
                        '</div>';
             }).join('');
 
-            // Full content block using string concatenation
+            // Full content block using string concatenation and custom CSS classes
             return (
                 '<!-- Top Section: City and Current Temp -->' +
-                '<div class="flex flex-col items-center pt-8 space-y-2 flex-shrink-0">' +
-                    '<div class="text-3xl font-light tracking-wide city-name">' + data.city + '</div>' +
-                    '<div class="temp-main city-temp">' + data.temp + '</div>' +
-                    '<div class="text-xl font-medium city-condition">' + data.condition + '</div>' +
+                '<div class="flex-col-center">' +
+                    '<div class="text-3xl font-light tracking-wide">' + data.city + '</div>' +
+                    '<div class="temp-main">' + data.temp + '</div>' +
+                    '<div class="text-xl font-medium">' + data.condition + '</div>' +
                     '<!-- High/Low Today -->' +
-                    '<div class="text-lg font-normal pt-4 city-high-low">' +
+                    '<div class="text-lg font-normal" style="padding-top: 16px;">' +
                         data.highLow +
                     '</div>' +
                 '</div>' +
 
                 '<!-- Scrollable Forecast Section (The translucent card) -->' +
-                '<div class="flex-grow flex items-end min-h-0">' +
-                    '<div class="w-full glass-blur p-4 mb-2 shadow-xl">' +
+                '<div style="min-height: 0; -webkit-box-flex: 1; display: -webkit-box; -webkit-box-align: end;">' +
+                    '<div class="glass-blur" style="width: 100%; padding: 16px; margin-bottom: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1);">' +
                         
-                        '<!-- Today\'s Summary Line (iOS 7 Style Text) -->' +
-                        '<div class="border-b border-white/20 pb-3 mb-3 text-sm font-light">' +
+                        '<!-- Today\'s Summary Line -->' +
+                        '<div class="text-sm font-light" style="border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 12px; margin-bottom: 12px;">' +
                             '<p>' + data.summary + '</p>' +
                         '</div>' +
 
                         '<!-- Hourly Forecast (Horizontal Scroll) -->' +
-                        '<div class="flex overflow-x-scroll space-x-6 py-2 border-b border-white/20 mb-3 text-center">' +
+                        '<div class="hourly-scroll">' +
                             hourlyHtml +
                         '</div>' +
 
                         '<!-- Daily Forecast (Stacked) -->' +
-                        '<div class="space-y-4">' +
+                        '<div style="margin-top: 16px;">' +
                             dailyHtml +
                         '</div>' +
 
@@ -243,13 +331,12 @@
         }
 
         /**
-         * Renders all city pages and their data.
+         * Renders all city pages and their data, and injects the fixed bottom navigation.
          */
         function renderCityPages() {
             var container = document.getElementById('weather-scroll-container');
             container.innerHTML = ''; 
 
-            // Using standard for loop for safety, though forEach is widely supported
             for (var index = 0; index < weatherData.length; index++) {
                 var data = weatherData[index];
                 var cityPage = document.createElement('div');
@@ -259,22 +346,22 @@
                 container.appendChild(cityPage);
             }
             
-            // Fixed navigation bar HTML - using string concatenation
-            var fixedNavHtml = 
-                '<div id="bottom-nav" class="flex justify-between items-center flex-shrink-0 h-16 w-full px-4 fixed bottom-0 left-0 right-0 glass-blur" style="border-radius: 0; background-color: rgba(255, 255, 255, 0.05); border: none; border-top: 1px solid rgba(255, 255, 255, 0.2);">' +
+            // Fixed navigation bar HTML - using custom CSS class
+            bottomNavHtml = 
+                '<div id="bottom-nav" class="bottom-nav-fixed">' +
                     '<!-- Details Button (Mock) -->' +
-                    '<button class="text-2xl font-extralight opacity-80 hover:opacity-100 transition">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-circle"><circle cx="12" cy="12" r="10"/><path d="M17 12H17.01"/><path d="M12 12H12.01"/><path d="M7 12H7.01"/></svg>' +
+                    '<button class="text-2xl font-extralight" style="opacity: 0.8; border: none; background: transparent; color: inherit; padding: 0;">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M17 12H17.01"/><path d="M12 12H12.01"/><path d="M7 12H7.01"/></svg>' +
                     '</button>' +
                     
                     '<!-- Page Indicator (Dynamic Dots) -->' +
-                    '<div id="page-indicator-new" class="flex space-x-2">' +
+                    '<div id="page-indicator-new" class="dot-indicator-container">' +
                         '<!-- Dots will be generated here by JS -->' +
                     '</div>' +
 
                     '<!-- List Button (Mock) -->' +
-                    '<button class="text-2xl font-extralight opacity-80 hover:opacity-100 transition">' +
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>' +
+                    '<button class="text-2xl font-extralight" style="opacity: 0.8; border: none; background: transparent; color: inherit; padding: 0;">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>' +
                     '</button>' +
                 '</div>';
             
@@ -282,7 +369,7 @@
             if (existingNav) {
                 existingNav.parentNode.removeChild(existingNav);
             }
-            document.body.insertAdjacentHTML('beforeend', fixedNavHtml);
+            document.body.insertAdjacentHTML('beforeend', bottomNavHtml);
             
             // Update the global pageIndicator reference
             pageIndicator = document.getElementById('page-indicator-new');
@@ -290,6 +377,7 @@
 
         /**
          * Updates the background gradient and dot indicator based on the current city.
+         * @param {number} cityIndex
          */
         function updateUI(cityIndex) {
             var data = weatherData[cityIndex];
@@ -304,10 +392,10 @@
             for (var i = 0; i < indicators.length; i++) {
                 if (i === cityIndex) {
                     // Current page: solid white dot
-                    indicators[i].className = 'h-2 w-2 bg-white rounded-full transition-all duration-300';
+                    indicators[i].className = 'dot active';
                 } else {
                     // Other pages: translucent white dot
-                    indicators[i].className = 'h-2 w-2 bg-white/40 rounded-full transition-all duration-300';
+                    indicators[i].className = 'dot';
                 }
             }
         }
@@ -320,27 +408,41 @@
             pageIndicator.innerHTML = '';
             for (var i = 0; i < numCities; i++) {
                 var dot = document.createElement('div');
-                dot.className = 'h-2 w-2 bg-white/40 rounded-full'; 
+                dot.className = 'dot'; 
                 pageIndicator.appendChild(dot);
             }
         }
 
-        // --- Event Listener for Scroll ---
+        // --- Event Listener for Snapping (JS-based) ---
 
         var scrollTimeout;
-        // Using standard function instead of arrow function
+        // Listen for the scroll event
         scrollContainer.addEventListener('scroll', function() {
-            // Debounce the scroll event
+            // Clear any previous timeout
             clearTimeout(scrollTimeout);
-            // Using standard function instead of arrow function
+            
+            // Set a timeout to run after scrolling stops (150ms should cover scroll inertia)
             scrollTimeout = setTimeout(function() {
-                // Calculate which page is currently in view
+                // SCROLL HAS STOPPED. NOW WE EXECUTE THE SNAP AND UPDATE UI.
+                
                 var scrollLeft = scrollContainer.scrollLeft;
                 var clientWidth = scrollContainer.clientWidth;
-                // Determine the current index (rounding to the nearest whole page)
-                var currentPage = Math.max(0, Math.round(scrollLeft / clientWidth));
+                
+                // 1. Calculate the nearest page index (rounding to the closest page)
+                var currentPage = Math.round(scrollLeft / clientWidth);
+                
+                // 2. Calculate the target scroll position (the start of the nearest page)
+                var targetPosition = currentPage * clientWidth;
+                
+                // 3. Force the scroll position to snap to the target position
+                // Note: We use scrollLeft = N instead of scrollTo({behavior: 'smooth'}) 
+                // because smooth scrolling is unreliable on iOS 7.
+                scrollContainer.scrollLeft = targetPosition; 
+
+                // 4. Update the UI
                 updateUI(currentPage);
-            }, 100); // 100ms debounce
+                
+            }, 150); 
         });
 
         // --- Initialization ---
